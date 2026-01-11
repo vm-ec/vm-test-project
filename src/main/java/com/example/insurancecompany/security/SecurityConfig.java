@@ -8,18 +8,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig {
 
         private final CustomUserDetailsService customUserDetailsService;
         private final PasswordEncoder passwordEncoder;
@@ -43,28 +45,50 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/webjars/**"
         };
 
-        @Override
-        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-                auth.userDetailsService(customUserDetailsService).passwordEncoder(passwordEncoder);
+        // Provide AuthenticationManager from AuthenticationConfiguration
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+                return configuration.getAuthenticationManager();
         }
 
-        @Override
-        protected void configure(HttpSecurity http) throws Exception {
-                http.csrf().disable();
-                http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-                http.authorizeRequests().antMatchers(AUTH_WHITELIST).permitAll()
-                        .and().httpBasic().authenticationEntryPoint(swaggerAuthenticationEntryPoint());
-                http.authorizeRequests().antMatchers("/login").permitAll()
-                        .antMatchers(HttpMethod.DELETE, "/users/**").hasAnyAuthority("ROLE_ADMIN")
-                        .antMatchers(HttpMethod.PUT, "/users/**").hasAnyAuthority("ROLE_ADMIN")
-                        .antMatchers(HttpMethod.POST, "/users/**").hasAnyAuthority("ROLE_MANAGER")
-                        .antMatchers(HttpMethod.GET, "/users/**").hasAnyAuthority("ROLE_MANAGER")
-                        .antMatchers("/calculation/**", "/buying/**", "/policies/**").hasAnyAuthority("ROLE_USER")
-                        .antMatchers("/registration/**").permitAll()
-                        .anyRequest().authenticated()
-                        .and().logout().logoutSuccessUrl("/login");
-                http.addFilter(new JWTAuthenticationFilter(authenticationManagerBean(), expirationTime, secretKey));
+        // Configure DaoAuthenticationProvider with our CustomUserDetailsService and PasswordEncoder
+        @Bean
+        public AuthenticationProvider authenticationProvider() {
+                DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+                provider.setUserDetailsService(customUserDetailsService);
+                provider.setPasswordEncoder(passwordEncoder);
+                return provider;
+        }
+
+        // Define the SecurityFilterChain instead of extending WebSecurityConfigurerAdapter
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                       AuthenticationManager authenticationManager) throws Exception {
+                http.csrf(csrf -> csrf.disable());
+                http.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+                http.authenticationProvider(authenticationProvider());
+
+                http.authorizeHttpRequests(requests -> requests
+                                .requestMatchers(AUTH_WHITELIST).permitAll()
+                                .requestMatchers("/login").permitAll()
+                                .requestMatchers(HttpMethod.DELETE, "/users/**").hasAnyAuthority("ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/users/**").hasAnyAuthority("ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.POST, "/users/**").hasAnyAuthority("ROLE_MANAGER")
+                                .requestMatchers(HttpMethod.GET, "/users/**").hasAnyAuthority("ROLE_MANAGER")
+                                .requestMatchers("/calculation/**", "/buying/**", "/policies/**").hasAnyAuthority("ROLE_USER")
+                                .requestMatchers("/registration/**").permitAll()
+                                .anyRequest().authenticated()
+                );
+
+                http.httpBasic(basic -> basic.authenticationEntryPoint(swaggerAuthenticationEntryPoint()));
+                http.logout(logout -> logout.logoutSuccessUrl("/login"));
+
+                // Add JWT filters
+                http.addFilter(new JWTAuthenticationFilter(authenticationManager, expirationTime, secretKey));
                 http.addFilterBefore(new JWTAuthorizationFilter(secretKey), UsernamePasswordAuthenticationFilter.class);
+
+                return http.build();
         }
 
         @Bean
@@ -73,11 +97,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 entryPoint.setRealmName("Swagger Realm");
                 return entryPoint;
         }
-
-        @Bean
-        @Override
-        public AuthenticationManager authenticationManagerBean() throws Exception {
-                return super.authenticationManagerBean();
-        }
-
 }

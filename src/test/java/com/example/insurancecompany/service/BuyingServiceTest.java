@@ -55,8 +55,14 @@ class BuyingServiceTest {
                         .startDate(LocalDate.now())
                         .endDate(LocalDate.now().plusYears(1))
                         .price(1015)
-                        .printableDetails("\nBrand: Peugeot\nModel: 208\nRegistration Number: ERD-76409"
-                                + "\nYear Of Production: 2019\nMileage (km): 8500\nEngine Capacity (cm3): 1800")
+                        .printableDetails("""
+                                
+                                Brand: Peugeot
+                                Model: 208
+                                Registration Number: ERD-76409
+                                Year Of Production: 2019
+                                Mileage (km): 8500
+                                Engine Capacity (cm3): 1800""")
                         .user(user)
                         .build();
 
@@ -98,8 +104,14 @@ class BuyingServiceTest {
                         .startDate(LocalDate.now())
                         .endDate(LocalDate.now().plusYears(6))
                         .price(31200)
-                        .printableDetails("\nTown: Manchester\nStreet: Queen Victoria Street\nHouse Number: 238"
-                                + "\nZip Code: M29\nConstruction Year: 1978\nBuilding Value: 410000")
+                        .printableDetails("""
+                                
+                                Town: Manchester
+                                Street: Queen Victoria Street
+                                House Number: 238
+                                Zip Code: M29
+                                Construction Year: 1978
+                                Building Value: 410000""")
                         .user(user)
                         .build();
 

@@ -15,8 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityNotFoundException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -46,7 +46,7 @@ public class PolicyService {
                         .orElseThrow(() -> new EntityNotFoundException("Insurance Not Found!"));
                 if(!loggedInUser.getUser().getInsurances().contains(insurance)) {
 
-                        throw new EntityNotFoundException(String.format("You Do Not Have Insurance With Id %d!", insuranceId));
+                        throw new EntityNotFoundException("You Do Not Have Insurance With Id %d!".formatted(insuranceId));
                 } else createPDF(response, insurance);
         }
 
@@ -70,17 +70,19 @@ public class PolicyService {
                 emptySpace.setAlignment(ALIGN_CENTER);
                 List<Paragraph> paragraphList = new ArrayList<>();
                 paragraphList.add(new Paragraph("Insurance Company", company));
-                paragraphList.add(new Paragraph(String.format("Insurance nr %d                  Type: %s", insurance.getId(), insurance.getType().toString()), title));
+                paragraphList.add(new Paragraph("Insurance nr %d                  Type: %s".formatted(insurance.getId(), insurance.getType().toString()), title));
                 paragraphList.add(new Paragraph("Insurer: Insurance Company Manchester Aspra Chomata 6-2 30200 Loutraki ", descriptionBold));
-                paragraphList.add(new Paragraph(String.format("Insured: %s %s", user.getFirstName(), user.getLastName()), descriptionBold));
-                paragraphList.add(new Paragraph(String.format("Insurance object details: %s", insurance.getPrintableDetails()), description));
-                paragraphList.add(new Paragraph(String.format("Insurance sum: %d", insurance.getPrice()), description));
-                paragraphList.add(new Paragraph(String.format("Period of insurance: from %s to %s", insurance.getStartDate(), insurance.getEndDate()), description));
-                paragraphList.add(new Paragraph(String.format("The premium is payable once, by the date %s", insurance.getStartDate().plusWeeks(1)), description));
+                paragraphList.add(new Paragraph("Insured: %s %s".formatted(user.getFirstName(), user.getLastName()), descriptionBold));
+                paragraphList.add(new Paragraph("Insurance object details: %s".formatted(insurance.getPrintableDetails()), description));
+                paragraphList.add(new Paragraph("Insurance sum: %d".formatted(insurance.getPrice()), description));
+                paragraphList.add(new Paragraph("Period of insurance: from %s to %s".formatted(insurance.getStartDate(), insurance.getEndDate()), description));
+                paragraphList.add(new Paragraph("The premium is payable once, by the date %s".formatted(insurance.getStartDate().plusWeeks(1)), description));
                 paragraphList.add(new Paragraph("Bank account number for premium payment: 27 5800 2637 7421 1110 2398 3300"));
-                paragraphList.add(new Paragraph("Policyholder's declaration:\n I declare that I have been shown and read the content" +
-                        "of the power of attorney to conclude the insurance contract and confirm that before concluding the contract I have received " +
-                        "the text of the General Terms and Conditions of Insurance together with additional clauses and have accepted their content.", description));
+                paragraphList.add(new Paragraph("""
+                        Policyholder's declaration:
+                         I declare that I have been shown and read the content\
+                        of the power of attorney to conclude the insurance contract and confirm that before concluding the contract I have received \
+                        the text of the General Terms and Conditions of Insurance together with additional clauses and have accepted their content.""", description));
                 paragraphList.add(new Paragraph("Place and date                                                                                 Signature of the policyholder", descriptionBold));
                 paragraphList.get(0).setAlignment(ALIGN_CENTER);
                 for (Paragraph paragraph : paragraphList) {
