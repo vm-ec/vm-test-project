@@ -1,0 +1,65 @@
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+
+spring:
+  profiles:
+    active: local
+  datasource:
+    url: jdbc:mysql://localhost:3306/insurancecompanydb
+    username: username
+    password: password
+    initialization-mode: always
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+       hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+    show-sql: true
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: insurance.company285@gmail.com
+    password: Insurance.Company285#
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+jwt:
+  expirationTime: 1800000
+  secretKey: frog-lion-monkey-penguin-tiger87
+
+confirmation:
+  token:
+    time: 15
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:mem:insurance;DB_CLOSE_DELAY=-1;MODE=MYSQL
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: true
+  h2:
+    console:
+      enabled: true
